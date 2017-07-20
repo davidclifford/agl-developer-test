@@ -1,3 +1,5 @@
+package main;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
@@ -9,7 +11,7 @@ import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Created by David on 20/07/2017.
@@ -22,64 +24,60 @@ public class Agl {
 
     private void run() {
         String url = "http://agl-developer-test.azurewebsites.net/people.json";
-        String json = readJsonFromUrl(url).orElseThrow(()->new RuntimeException("Json read error"));;
-        List<Owner> owners = extractOwnersFromJson(json).orElseThrow(()->new RuntimeException("Json parse error"));
+        String json = readJsonFromUrl(url);
+        List<Owner> owners = extractOwnersFromJson(json);
         displayPetNamesBySexOfOwner("Male",owners);
         displayPetNamesBySexOfOwner("Female",owners);
     }
 
-    private Optional<String> readJsonFromUrl(String url) {
+    public String readJsonFromUrl(String url) {
         StringBuilder jsonBuilder = new StringBuilder();
+
         try {
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpGet getRequest = new HttpGet(url);
-
             getRequest.addHeader("accept", "application/json");
             HttpResponse response = httpClient.execute(getRequest);
 
             if (response.getStatusLine().getStatusCode() != 200) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + response.getStatusLine().getStatusCode());
+                throw new RuntimeException("Error reading from url, status code : " + response.getStatusLine().getStatusCode());
             }
 
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader((response.getEntity().getContent())));
-
-            String output;
-            while ((output = br.readLine()) != null) {
-                jsonBuilder.append(output);
-            }
+            BufferedReader br = new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+            jsonBuilder.append(br.lines().collect(Collectors.joining()));
 
             httpClient.getConnectionManager().shutdown();
         } catch (Exception e) {
-            e.printStackTrace();
-            return Optional.empty();
+            throw new RuntimeException(e.getMessage());
         }
-
-        return Optional.of(jsonBuilder.toString());
+        return jsonBuilder.toString();
     }
 
-    private Optional<List<Owner>> extractOwnersFromJson(String json) {
+    public List<Owner> extractOwnersFromJson(String json) {
         ObjectMapper mapper = new ObjectMapper();
-        List<Owner> owners = null;
+        List<Owner> owners;
         try {
             owners = mapper.readValue(json, new TypeReference<List<Owner>>() {});
         } catch (Exception e) {
-            e.printStackTrace();
-            return Optional.empty();
+            throw new RuntimeException(e.getMessage());
         }
-        return Optional.ofNullable(owners);
+        return owners;
     }
 
-    private void displayPetNamesBySexOfOwner(final String sex, List<Owner> owners) {
+    public void displayPetNamesBySexOfOwner(String sex, List<Owner> owners) {
         System.out.println(sex);
-        owners.stream()
+        getPetNamesBySexOfOwner(sex, owners)
+            .forEach(name -> System.out.format("\t%s\n", name));
+    }
+
+    public List<String> getPetNamesBySexOfOwner(String sex, List<Owner> owners) {
+        return owners.stream()
                 .filter(owner -> owner.getGender().equals(sex))
                 .map(Owner::getPets)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .map(Pet::getName)
                 .sorted()
-                .forEach(name -> System.out.format("\t%s\n", name));
+                .collect(Collectors.toList());
     }
 }
