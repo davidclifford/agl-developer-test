@@ -49,11 +49,18 @@ public class Tests {
     }
 
     @Test
-    public void testGetPetNamesByFemaleOfOwner() {
+    public void testGetPetNamesByFemaleOwner() {
         List<Owner> owners = buildOwnerList();
         List<String> names = app.getPetNamesBySexOfOwner("Female",owners);
         assertEquals(names.size(),1);
         assertEquals(names.get(0),"Garfield");
+    }
+
+    @Test
+    public void testGetPetNamesByInvalidGender() {
+        List<Owner> owners = buildOwnerList();
+        List<String> names = app.getPetNamesBySexOfOwner("Invalid",owners);
+        assertEquals(names.size(),0);
     }
 
     private List<Owner> buildOwnerList() {
@@ -87,6 +94,13 @@ public class Tests {
         jennifer.setAge(18);
         jennifer.setPets(jensPets);
         owners.add(jennifer);
+
+        Owner nopets = new Owner();
+        nopets.setName("No Pets");
+        nopets.setAge(39);
+        nopets.setGender("Male");
+        nopets.setPets(null);
+        owners.add(nopets);
 
         return owners;
     }

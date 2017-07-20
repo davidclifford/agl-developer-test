@@ -64,15 +64,15 @@ public class Agl {
         return owners;
     }
 
-    public void displayPetNamesBySexOfOwner(String sex, List<Owner> owners) {
-        System.out.println(sex);
-        getPetNamesBySexOfOwner(sex, owners)
+    public void displayPetNamesBySexOfOwner(String gender, List<Owner> owners) {
+        System.out.println(gender);
+        getPetNamesBySexOfOwner(gender, owners)
             .forEach(name -> System.out.format("\t%s\n", name));
     }
 
-    public List<String> getPetNamesBySexOfOwner(String sex, List<Owner> owners) {
+    public List<String> getPetNamesBySexOfOwner(String gender, List<Owner> owners) {
         return owners.stream()
-                .filter(owner -> owner.getGender().equals(sex))
+                .filter(owner -> owner.getGender().equals(gender))
                 .map(Owner::getPets)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
